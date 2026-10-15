@@ -79,7 +79,7 @@ algorithms/
   support.py                ReadCounter (element reads), deep recursion, timing
 docs/                       the course: 8 chapters + docs/traces/*.txt (real output)
 tests/                      190 tests; every claim in the docs has one
-tools/                      demo, benchmark, trace generator, archive freezer
+tools/                      demo, bench, traces, freeze, run_all, playground server
 playground/index.html       click through the algorithms in a browser
 ```
 
@@ -176,6 +176,18 @@ if it were false:
 dependencies): step through the repaired scan window by window, watch
 Boyer-Moore cancel votes, see the archived loop give a wrong answer next to the
 right one, and measure the recursion depth budget. Open it directly, or serve it:
+
+```console
+$ python -m tools.serve_playground                # http://localhost:8000
+```
+
+`tools/serve_playground.py` is thirty lines of stdlib around
+`http.server` that fix the four habits which show up when a page is loaded
+through a proxy or an iframe: it speaks HTTP/1.1 (so the connection stays warm),
+raises the listen backlog from 5 to 128, declares `charset=utf-8` on every
+content type, and sends `Cache-Control: no-store` so a cached copy can never
+shadow a regenerated page. The plain fallback still works if you prefer no
+repository code in the serving path:
 
 ```console
 $ python -m http.server 8000 --directory playground
