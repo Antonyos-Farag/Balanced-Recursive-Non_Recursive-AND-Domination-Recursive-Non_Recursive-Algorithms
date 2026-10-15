@@ -1,0 +1,8 @@
+# SHA-256 digests of the four archived submissions.
+# Written by tools/freeze_archive.py; verified by tests/test_original_characterization.py.
+# If a digest changes, somebody edited the archive. Revert the edit -- do not 'fix' this file.
+
+354ecdee78ceb6352f9163cd19d6a01205293a325f00229f6d4af55c71822f2d  balanced_iterative.py
+41a72e03d2e2c100961d15d2fcd9d6f2ce8127ec5d992ff4af9c94f9a866b72b  balanced_recursive.py
+d03887f38467df6775c78edb13c520fb92d12098ec9afc2ec13b2c5d56c89b0e  dominator_iterative.py
+d66329c9b6075bb289aa628e65914a8b119779f6a0456018c83f9d937121b2c5  dominator_recursive.py

@@ -1,0 +1,40 @@
+# Boyer-Moore: cancel, elect, and verify
+#
+# Regenerate with:  python -m tools.make_traces
+# Do not edit by hand: tests/test_docs_traces.py compares this file with a
+# fresh run of the code it shows.
+
+## Boyer-Moore on [3, 1, 3, 2, 3, 4, 3, 3]
+
+The vote leaves candidate 3 with count 2; the verification pass counts 5
+real occurrences, which is more than 8 // 2 = 4, so 3 is a dominator.
+The count column is the vote's bookkeeping, *not* a count of occurrences.
+
++---+------+---------+-----------+-------+--------------------+
+| i | a[i] | action  | candidate | count | survivors          |
++---+------+---------+-----------+-------+--------------------+
+| 0 | 3    | elect   | 3         |     1 | ######......       |
+| 1 | 1    | cancel  | 3         |     0 | ............       |
+| 2 | 3    | elect   | 3         |     1 | ######......       |
+| 3 | 2    | cancel  | 3         |     0 | ............       |
+| 4 | 3    | elect   | 3         |     1 | ######......       |
+| 5 | 4    | cancel  | 3         |     0 | ............       |
+| 6 | 3    | elect   | 3         |     1 | ######......       |
+| 7 | 3    | support | 3         |     2 | ############       |
+| - | -    | verify  | 3         |     5 | majority needs > 4 |
++---+------+---------+-----------+-------+--------------------+
+
+## ... and on [1, 2, 3], where the vote is wrong
+
+Candidate 3 survives the vote, but it occurs once in three elements, so the
+verification pass throws it away.  Removing that second pass is the classic
+way to get this exercise wrong.
+
++---+------+--------+-----------+-------+--------------------+
+| i | a[i] | action | candidate | count | survivors          |
++---+------+--------+-----------+-------+--------------------+
+| 0 | 1    | elect  | 1         |     1 | ############       |
+| 1 | 2    | cancel | 1         |     0 | ............       |
+| 2 | 3    | elect  | 3         |     1 | ############       |
+| - | -    | verify | 3         |     1 | majority needs > 1 |
++---+------+--------+-----------+-------+--------------------+
