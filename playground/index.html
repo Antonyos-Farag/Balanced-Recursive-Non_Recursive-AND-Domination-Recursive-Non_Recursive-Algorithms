@@ -1,0 +1,1195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Balanced substrings &amp; dominators — interactive lab</title>
+<style>
+  :root {
+    --bg: #0f1116;
+    --panel: #171a22;
+    --panel-2: #1e222c;
+    --line: #2b3140;
+    --ink: #e7eaf3;
+    --dim: #9aa3b7;
+    --good: #3ddc97;
+    --bad: #ff6b6b;
+    --warn: #ffcc66;
+    --accent: #6ea8fe;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  header { padding: 22px 24px 0; }
+  h1 { margin: 0 0 4px; font-size: 21px; letter-spacing: .2px; }
+  .sub { margin: 0 0 14px; color: var(--dim); max-width: 78ch; }
+  nav.tabs { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+  nav.tabs button {
+    background: none; border: 1px solid transparent; border-bottom: none;
+    color: var(--dim); padding: 8px 14px; border-radius: 8px 8px 0 0; cursor: pointer;
+    font: inherit;
+  }
+  nav.tabs button:hover { color: var(--ink); }
+  nav.tabs button.active { background: var(--panel); border-color: var(--line); color: var(--ink); }
+  main { padding: 18px 24px 40px; }
+  section[hidden] { display: none; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+  }
+  .card h2 { margin: 0 0 8px; font-size: 15px; letter-spacing: .3px; color: var(--ink); }
+  .card h3 { margin: 14px 0 6px; font-size: 13px; color: var(--dim); text-transform: uppercase; letter-spacing: .6px; }
+  .wide { grid-column: 1 / -1; }
+  label { color: var(--dim); font-size: 13px; display: block; margin-bottom: 4px; }
+  input[type=text] {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 8px; padding: 8px 10px; font-family: var(--mono); font-size: 14px;
+  }
+  input[type=range] { width: 100%; }
+  button.btn {
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 8px; padding: 7px 12px; cursor: pointer; font: inherit;
+  }
+  button.btn:hover { border-color: var(--accent); }
+  button.btn:disabled { opacity: .45; cursor: default; }
+  button.chip {
+    background: transparent; border: 1px dashed var(--line); color: var(--dim);
+    border-radius: 999px; padding: 4px 10px; font-family: var(--mono); font-size: 12px; cursor: pointer;
+  }
+  button.chip:hover { color: var(--ink); border-color: var(--accent); }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row.tight { gap: 6px; }
+  .mono { font-family: var(--mono); }
+  .dim { color: var(--dim); }
+  .small { font-size: 12.5px; }
+  .badge {
+    display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: 12px;
+    border: 1px solid var(--line); color: var(--dim);
+  }
+  .badge.ok { color: #08231a; background: var(--good); border-color: var(--good); }
+  .badge.no { color: #2b0b0b; background: var(--bad); border-color: var(--bad); }
+  .badge.warn { color: #2b2200; background: var(--warn); border-color: var(--warn); }
+  .str { font-family: var(--mono); font-size: 17px; letter-spacing: 1px; word-break: break-all; }
+  .str span.ch { padding: 1px 0; border-radius: 3px; }
+  .str span.win { background: #24406b; outline: 1px solid var(--accent); }
+  .str span.hit { background: #1c4a35; outline: 1px solid var(--good); }
+  .str span.dead { opacity: .35; }
+  .str span.edge { border-left: 2px solid var(--warn); }
+  table { border-collapse: collapse; width: 100%; font-family: var(--mono); font-size: 13px; }
+  th, td { border-bottom: 1px solid var(--line); padding: 5px 8px; text-align: left; }
+  th { color: var(--dim); font-weight: 500; }
+  tr.now td { background: #24406b; }
+  tr.done td { opacity: .6; }
+  td.num, th.num { text-align: right; }
+  .freq { display: flex; gap: 4px; flex-wrap: wrap; }
+  .freq .cell {
+    min-width: 40px; text-align: center; border: 1px solid var(--line); border-radius: 6px;
+    padding: 3px 5px; font-family: var(--mono); font-size: 12px; color: var(--dim);
+  }
+  .freq .cell.on { color: var(--ink); border-color: var(--accent); background: #1b2637; }
+  .freq .cell.lit { border-color: var(--good); background: #16352a; }
+  .kv { display: flex; gap: 14px; flex-wrap: wrap; font-family: var(--mono); font-size: 13px; }
+  .kv b { color: var(--accent); font-weight: 600; }
+  pre.tree {
+    font-family: var(--mono); font-size: 12.5px; white-space: pre; overflow: auto;
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px; max-height: 320px; margin: 0;
+  }
+  .verdict { font-family: var(--mono); font-size: 13px; min-height: 19px; }
+  .verdict.ok { color: var(--good); }
+  .verdict.no { color: var(--bad); }
+  .verdict.warn { color: var(--warn); }
+  .bar { height: 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--accent); }
+  .bar.over > i { background: var(--bad); }
+  .note { color: var(--dim); font-size: 13px; }
+  ul.tight { margin: 6px 0 0 18px; padding: 0; }
+  ul.tight li { margin-bottom: 4px; }
+  code { font-family: var(--mono); background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+  footer { padding: 0 24px 40px; color: var(--dim); font-size: 12.5px; }
+  .legend span { margin-right: 12px; white-space: nowrap; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Balanced substrings &amp; dominators — interactive lab</h1>
+  <p class="sub">
+    The companion playground for the repository. Everything here runs in this file:
+    no build step, no dependencies, no network. The algorithms are re-implemented in
+    JavaScript and step through the same states the Python versions step through —
+    including the bug in the submitted loop, which you can watch give the wrong answer.
+  </p>
+  <nav class="tabs" id="tabs">
+    <button data-tab="balanced" class="active">Balanced strings</button>
+    <button data-tab="dominator">Dominators</button>
+    <button data-tab="recursion">Recursion vs iteration</button>
+    <button data-tab="notes">What am I looking at?</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ============================== BALANCED ============================== -->
+  <section id="tab-balanced">
+    <div class="grid">
+      <div class="card wide">
+        <h2>Balanced substring: exactly two letters, each the same number of times</h2>
+        <div class="row">
+          <div style="flex:1 1 320px">
+            <label for="bal-input">input (a–z; case is folded)</label>
+            <input id="bal-input" type="text" value="aabbb" spellcheck="false">
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <div class="row tight">
+              <button class="btn" id="bal-run">Run</button>
+              <button class="chip" data-sample="aabbb">aabbb</button>
+              <button class="chip" data-sample="aabbc">aabbc</button>
+              <button class="chip" data-sample="abcabc">abcabc</button>
+              <button class="chip" data-sample="aabbaa">aabbaa</button>
+              <button class="chip" data-sample="ababababab">abababab…</button>
+              <button class="chip" data-sample="aaaaaaaa">aaaa…</button>
+              <button class="chip" data-sample="aaabbb">aaabbb</button>
+              <button class="chip" data-sample="abcdefghijklmnopqrstuvwxyz">a–z</button>
+            </div>
+          </div>
+        </div>
+        <p class="note" id="bal-error"></p>
+      </div>
+
+      <div class="card">
+        <h2>The submitted loop</h2>
+        <p class="note small">
+          The archived program's logic, faithfully reproduced in JavaScript: the balance
+          test runs <em>after</em> the scan, so only the last window touched for each
+          starting position is ever examined. Bug B1.
+        </p>
+        <p class="mono" id="buggy-result">—</p>
+        <p class="small" id="buggy-verdict"></p>
+      </div>
+
+      <div class="card">
+        <h2>The truth (and the fast answer)</h2>
+        <p class="note small">
+          The fixed double loop is the reference here (the repository's real oracle is
+          the <code>O(n³)</code> version); the pair scan is the same answer in
+          <code>O(σ² · n)</code>.
+        </p>
+        <p class="mono" id="fixed-result">—</p>
+        <p class="mono dim small" id="pair-result">—</p>
+        <p class="small" id="fixed-verdict"></p>
+      </div>
+
+      <div class="card wide">
+        <h2>Watch the repaired scan</h2>
+        <div class="row">
+          <button class="btn" id="scan-play">Play</button>
+          <button class="btn" id="scan-step">Step</button>
+          <button class="btn" id="scan-reset">Reset</button>
+          <label style="margin:0 0 0 8px" for="scan-speed">speed</label>
+          <select id="scan-speed" class="btn">
+            <option value="220">slow</option>
+            <option value="90" selected>normal</option>
+            <option value="25">fast</option>
+          </select>
+          <span class="small dim" id="scan-counter"></span>
+        </div>
+        <h3>the string, the window, and the letter that ends the scan</h3>
+        <div class="str" id="scan-str"></div>
+        <div class="legend small dim" style="margin-top:6px">
+          <span><i class="swatch" style="background:#24406b"></i>current window</span>
+          <span><i class="swatch" style="background:#1c4a35"></i>balanced (record or tie)</span>
+          <span><i class="swatch" style="background:#00000000;border:2px solid var(--warn);width:6px;height:6px"></i>next character</span>
+          <span><i class="swatch" style="background:#6b7280"></i>skipped after the third letter</span>
+        </div>
+        <h3>state</h3>
+        <div class="kv">
+          <span>start <b id="scan-start">0</b></span>
+          <span>end <b id="scan-end">0</b></span>
+          <span>distinct <b id="scan-distinct">0</b></span>
+          <span>max count <b id="scan-max">0</b></span>
+          <span>2·max = length <b id="scan-test">–</b></span>
+          <span>best so far <b id="scan-best">0</b></span>
+        </div>
+        <div class="freq" id="scan-freq"></div>
+        <p class="verdict" id="scan-verdict">—</p>
+      </div>
+
+      <div class="card wide">
+        <h2>Watch the pair scan</h2>
+        <p class="note small">
+          One row per pair of letters that occurs: how many maximal runs of consecutive
+          positions it forms ("blocks"), and the best balanced substring inside them.
+        </p>
+        <div id="pair-table"></div>
+        <p class="mono" id="pair-summary">—</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== DOMINATOR ============================== -->
+  <section id="tab-dominator" hidden>
+    <div class="grid">
+      <div class="card wide">
+        <h2>Dominator: a value occurring strictly more than n/2 times</h2>
+        <div class="row">
+          <div style="flex:1 1 320px">
+            <label for="dom-input">array (numbers, or <code>null</code>/<code>None</code> as a value)</label>
+            <input id="dom-input" type="text" value="3, 1, 3, 2, 3, 4, 3, 3" spellcheck="false">
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <div class="row tight">
+              <button class="btn" id="dom-run">Run</button>
+              <button class="chip" data-array="3,1,3,2,3,4,3,3">the running example</button>
+              <button class="chip" data-array="1,2,3,4">no dominator</button>
+              <button class="chip" data-array="1,1,2,2">exactly half</button>
+              <button class="chip" data-array="null,null,1">None, None, 1</button>
+              <button class="chip" data-array="2,2,2,2,5">clear winner</button>
+            </div>
+          </div>
+        </div>
+        <p class="note" id="dom-error"></p>
+      </div>
+
+      <div class="card">
+        <h2>Boyer-Moore vote, step by step</h2>
+        <div class="row">
+          <button class="btn" id="vote-play">Play</button>
+          <button class="btn" id="vote-step">Step</button>
+          <button class="btn" id="vote-reset">Reset</button>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <div class="cell mono">candidate: <b id="vote-cand">–</b></div>
+          <div class="cell mono">count: <b id="vote-count">0</b></div>
+        </div>
+        <div id="vote-table" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card">
+        <h2>What each strategy says</h2>
+        <table id="dom-table"></table>
+        <p class="small" id="dom-verdict"></p>
+        <p class="note small">
+          The archived divide &amp; conquer uses <code>None</code> as its "no dominator"
+          marker, so on <code>[null, null, 1]</code> it reports nothing — the value
+          <code>null</code> is a perfectly good dominator there. Bug B12.
+        </p>
+      </div>
+
+      <div class="card wide">
+        <h2>Divide &amp; conquer: the same array, recursively halved</h2>
+        <p class="note small">
+          Each node asks both halves for their majority, then counts a candidate over its
+          own range only when it survived. Reading the tree is reading the proof: if a
+          value dominates a range, it dominates at least one half.
+        </p>
+        <pre class="tree" id="dc-tree"></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== RECURSION ============================== -->
+  <section id="tab-recursion" hidden>
+    <div class="grid">
+      <div class="card wide">
+        <h2>One stack frame per character (of the window)</h2>
+        <div class="row">
+          <div style="flex:1 1 320px">
+            <label for="rec-input">input</label>
+            <input id="rec-input" type="text" value="abababababababababab" spellcheck="false">
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <div class="row tight">
+              <button class="btn" id="rec-run">Measure depth</button>
+              <button class="chip" data-rec="a">"a"</button>
+              <button class="chip" data-rec="abcabc">abcabc</button>
+              <button class="chip" data-rec="ababab">ababab</button>
+              <button class="chip" data-rec="aabb">aabb</button>
+            </div>
+          </div>
+        </div>
+        <div class="kv" style="margin-top:10px">
+          <span>characters <b id="rec-n">0</b></span>
+          <span>deepest call <b id="rec-depth">0</b></span>
+          <span>CPython budget <b>1000</b> frames</span>
+          <span>verdict <b id="rec-verdict">–</b></span>
+        </div>
+        <div class="bar" id="rec-bar" style="margin-top:8px"><i style="width:0%"></i></div>
+        <p class="note small" id="rec-note" style="margin-top:8px"></p>
+        <h3>the call tree (truncated for sanity)</h3>
+        <pre class="tree" id="rec-tree"></pre>
+      </div>
+
+      <div class="card">
+        <h2>Where the wall is depends on how deep you already are</h2>
+        <table>
+          <thead><tr><th>called from</th><th class="num">largest <span class="mono">"a" * n</span></th></tr></thead>
+          <tbody>
+            <tr><td>module level of a script</td><td class="num mono">996</td></tr>
+            <tr><td>one helper function deep</td><td class="num mono">995</td></tr>
+            <tr><td>inside a <span class="mono">unittest</span> method</td><td class="num mono">981</td></tr>
+            <tr><td>through a per-call logging wrapper</td><td class="num mono">≈495</td></tr>
+          </tbody>
+        </table>
+        <p class="note small" style="margin-top:8px">
+          Measured on CPython 3.11 with the repository's own functions. The budget is
+          1,000 frames <em>total</em>: every frame between you and the recursion is a
+          character you cannot scan. That is why the repository's recursion is a
+          translation (a loop for the outer call) rather than a decoration, and why
+          <code>run_deep</code> runs in a thread with a big stack when the recursion must stay.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>Mutate, recurse, undo</h2>
+        <p class="note small">
+          The recursive scan has two spellings. Copying the frequency table per level is
+          simple but pays 26 integers per frame; mutating one shared table and undoing the
+          mutation afterwards is the classic backtracking shape and is measurably faster.
+        </p>
+        <table>
+          <thead><tr><th>implementation</th><th class="num">n = 500, "abab…"</th></tr></thead>
+          <tbody>
+            <tr><td>copy <span class="mono">freq[:]</span> per level</td><td class="num mono">138.7 ms</td></tr>
+            <tr><td>mutate and undo one table</td><td class="num mono">101.5 ms</td></tr>
+            <tr><td>plain loop, same reads</td><td class="num mono">77.2 ms</td></tr>
+          </tbody>
+        </table>
+        <p class="note small" style="margin-top:8px">
+          Identical element-read counts in all three rows. The difference is what the
+          machine does between the reads — which is why the repository measures both.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== NOTES ============================== -->
+  <section id="tab-notes" hidden>
+    <div class="grid">
+      <div class="card wide">
+        <h2>What this page is</h2>
+        <p class="note small">
+          A single self-contained file that re-implements, in JavaScript, the algorithms
+          this repository studies: the archived (buggy) loop, the repaired double loop,
+          the pair scan, the Boyer–Moore vote, and the divide &amp; conquer recursion.
+          It is a <em>companion</em>: the Python versions are the source of truth, and
+          the numbers quoted in the other tabs come from <code>docs/traces/bench.txt</code>.
+        </p>
+        <h3>Self-check</h3>
+        <div class="row">
+          <button class="btn" id="selftest">Run the JavaScript self-check</button>
+          <span class="small dim">compares the three balanced implementations on every string over <span class="mono">abc</span> up to length 7, and the dominator strategies on small arrays</span>
+        </div>
+        <pre class="tree" id="selftest-out" style="margin-top:10px">not run yet</pre>
+      </div>
+      <div class="card">
+        <h2>Bugs you can reproduce here</h2>
+        <ul class="tight small">
+          <li><b>B1</b> — put <span class="mono">aabbb</span> in the balanced tab: the submitted loop says
+            <span class="mono">(0, [])</span>, the truth is <span class="mono">(4, ['aabb'])</span>.</li>
+          <li><b>B1b</b> — the submitted frequency test only looks at the first two non-zero
+            counts; an independent counter is what saves it.</li>
+          <li><b>B12</b> — put <span class="mono">null, null, 1</span> in the dominator tab: the
+            archived recursion reports "no dominator" for an array whose dominator is
+            <span class="mono">null</span>.</li>
+          <li><b>B8</b> — the archived vote returns <span class="mono">-1</span> for "none" while its
+            sibling returns <span class="mono">[]</span>; the typed result here returns
+            <span class="mono">null</span> uniformly.</li>
+          <li><b>B4</b> — the recursion tab shows the depth budget and where it breaks.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>How to read the colours</h2>
+        <ul class="tight small">
+          <li><span class="badge ok">ok</span> the implementation agrees with the truth.</li>
+          <li><span class="badge no">wrong</span> it does not, and it will not tell you.</li>
+          <li><span class="badge warn">policy</span> a difference that is a decision, not an error
+            (for example case folding).</li>
+          <li>The window highlight is the state a human would see in a debugger; the
+            frequency row underneath is the state the code reads.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Part of the <span class="mono">Balanced-Recursive-Non_Recursive-AND-Domination</span> study
+  repository. Open <span class="mono">docs/01</span> and <span class="mono">docs/02</span> next
+  to this page; the traces in <span class="mono">docs/traces/</span> are what the panels above
+  are imitating.
+</footer>
+
+<script>
+"use strict";
+
+/* =====================================================================
+   0. small helpers
+   ===================================================================== */
+
+const $ = (id) => document.getElementById(id);
+const A_CODE = "a".charCodeAt(0);
+const el = (tag, cls, text) => {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== undefined) node.textContent = text;
+  return node;
+};
+
+/* =====================================================================
+   1. the algorithms, ported from algorithms/balanced/*.py
+   ---------------------------------------------------------------------
+   Contract, identical to the Python package: input is a string of ASCII
+   letters (case folded); output is { length, answers } where answers is
+   the sorted list of distinct balanced substrings of that length.
+   ===================================================================== */
+
+function normalize(text) {
+  const out = [];
+  for (const ch of text) {
+    if (ch >= "a" && ch <= "z") out.push(ch);
+    else if (ch >= "A" && ch <= "Z") out.push(ch.toLowerCase());
+    else return { text: null, error: "only ASCII letters are allowed; found " + JSON.stringify(ch) };
+  }
+  return { text: out.join(""), error: null };
+}
+
+function isBalanced(sub) {
+  const counts = new Map();
+  for (const ch of sub) counts.set(ch, (counts.get(ch) || 0) + 1);
+  if (counts.size !== 2) return false;
+  const [a, b] = [...counts.values()];
+  return a === b;
+}
+
+/* The oracle: try every substring. O(n^3), obviously correct. */
+function reference(s) {
+  let best = 0;
+  const seen = new Set();
+  for (let i = 0; i < s.length; i++) {
+    for (let j = i + 1; j <= s.length; j++) {
+      const sub = s.slice(i, j);
+      if (!isBalanced(sub)) continue;
+      if (sub.length > best) { best = sub.length; seen.clear(); }
+      if (sub.length === best) seen.add(sub);
+    }
+  }
+  return { length: best, answers: [...seen].sort(), steps: null };
+}
+
+/* The repaired double loop, recording every state so the UI can replay it. */
+function fixedScan(s, record) {
+  const scan = [];
+  let best = 0;
+  const seen = new Set();
+  for (let start = 0; start < s.length; start++) {
+    const freq = new Array(26).fill(0);
+    let distinct = 0, maxCount = 0;
+    for (let end = start; end < s.length; end++) {
+      const index = s.charCodeAt(end) - A_CODE;
+      if (freq[index] === 0) distinct++;
+      freq[index]++;
+      if (freq[index] > maxCount) maxCount = freq[index];
+      const len = end - start + 1;
+      let verdict, hit = false;
+      if (distinct > 2) {
+        verdict = "a third letter appeared -> stop this scan";
+      } else if (distinct < 2) {
+        verdict = "not two letters yet";
+      } else if (2 * maxCount === len) {
+        verdict = "balanced (the two counts are equal)";
+        hit = true;
+        if (len > best) { best = len; seen.clear(); }
+        if (len === best) seen.add(s.slice(start, end + 1));
+      } else {
+        verdict = "the two counts differ";
+      }
+      if (record) scan.push({ start, end, distinct, maxCount, freq: freq.slice(), verdict, hit, best });
+      if (distinct > 2) break;
+    }
+  }
+  return { length: best, answers: [...seen].sort(), steps: scan };
+}
+
+/* The archived loop, reproduced exactly -- including the misplaced test.
+   For each start: scan until the end or the third letter, then ask the
+   balance question once, about the window that scan ended on. */
+function legacyEqualPair(freq) {
+  let first = -1, second = -1;
+  for (const f of freq) {
+    if (f > 0) {
+      if (first === -1) first = f;
+      else if (second === -1) second = f;
+    }
+  }
+  return first !== -1 && second !== -1 && first === second;
+}
+
+function buggyScan(s) {
+  let best = 0;
+  const answers = [];
+  for (let start = 0; start < s.length; start++) {
+    const freq = new Array(26).fill(0);
+    let distinct = 0, end = start - 1;
+    for (end = start; end < s.length; end++) {
+      const index = s.charCodeAt(end) - A_CODE;
+      if (freq[index] === 0) distinct++;
+      freq[index]++;
+      if (distinct > 2) break;
+    }
+    if (distinct === 2 && legacyEqualPair(freq)) {
+      const window = s.slice(start, end + 1);
+      const len = window.length;
+      if (len > best) { best = len; answers.length = 0; answers.push(window); }
+      else if (len === best && !answers.includes(window)) answers.push(window);
+    }
+  }
+  return { length: best, answers };
+}
+
+/* The pair scan: 325 letter pairs, blocks, prefix sums. O(sigma^2 * n). */
+function pairScan(s, wantReport) {
+  const positions = new Map();
+  for (let i = 0; i < s.length; i++) {
+    if (!positions.has(s[i])) positions.set(s[i], []);
+    positions.get(s[i]).push(i);
+  }
+  const letters = [...positions.keys()].sort();
+  let best = 0;
+  const seen = new Set();
+  const report = [];
+  for (let a = 0; a < letters.length; a++) {
+    for (let b = a + 1; b < letters.length; b++) {
+      const first = letters[a], second = letters[b];
+      const merged = positions.get(first).concat(positions.get(second)).sort((x, y) => x - y);
+      let prefix = 0, earliest = new Map([[0, 0]]);
+      let blockStart = 0, blockSizes = [], pairBest = 0;
+      const pairAnswers = new Set();
+      for (let k = 0; k < merged.length; k++) {
+        if (k === 0 || merged[k] !== merged[k - 1] + 1) {
+          earliest = new Map([[prefix, k]]);
+          if (k > 0) blockSizes.push(k - blockStart);
+          blockStart = k;
+        }
+        prefix += s[merged[k]] === first ? 1 : -1;
+        if (earliest.has(prefix)) {
+          const from = earliest.get(prefix);
+          const len = merged[k] - merged[from] + 1;
+          if (len > best) { best = len; seen.clear(); }
+          if (len === best) seen.add(s.slice(merged[from], merged[k] + 1));
+          if (len > pairBest) { pairBest = len; pairAnswers.clear(); }
+          if (len === pairBest) pairAnswers.add(s.slice(merged[from], merged[k] + 1));
+        } else {
+          earliest.set(prefix, k + 1);
+        }
+      }
+      blockSizes.push(merged.length - blockStart);
+      if (wantReport) {
+        report.push({
+          pair: first + second,
+          blocks: blockSizes.length,
+          sizes: blockSizes.join(" "),
+          best: pairBest,
+          answers: [...pairAnswers].sort().join(" ") || "—",
+        });
+      }
+    }
+  }
+  return { length: best, answers: [...seen].sort(), report };
+}
+
+/* =====================================================================
+   2. the dominator algorithms, ported from algorithms/dominator/*.py
+   ===================================================================== */
+
+/* Boyer-Moore vote. Returns the candidate (or NOBODY) plus the walk. */
+const NOBODY = Symbol("no candidate");
+function voteWalk(a) {
+  let candidate = NOBODY, count = 0;
+  const walk = [];
+  for (let i = 0; i < a.length; i++) {
+    let action;
+    if (count === 0) { candidate = a[i]; count = 1; action = "elect"; }
+    else if (a[i] === candidate) { count++; action = "support"; }
+    else { count--; action = "cancel"; }
+    walk.push({ i, value: a[i], candidate, count, action });
+  }
+  return { candidate, count, walk };
+}
+
+function boyerMoore(a) {
+  const { candidate, walk } = voteWalk(a);
+  if (candidate === NOBODY) return { dominator: null, walk };
+  const indices = [];
+  for (let i = 0; i < a.length; i++) if (a[i] === candidate) indices.push(i);
+  const dominator = 2 * indices.length > a.length ? { value: candidate, indices } : null;
+  return { dominator, walk };
+}
+
+/* The archived recursion: candidates verified per range, indices rebuilt per
+   level, and `null` doubling as the "no dominator" marker (bug B12). */
+function legacyDivide(a, lo, hi) {
+  if (lo > hi) return { value: null, indices: [] };
+  if (lo === hi) return { value: a[lo], indices: [lo] };
+  if (lo + 1 === hi) {
+    return a[lo] === a[hi] ? { value: a[lo], indices: [lo, hi] } : { value: null, indices: [] };
+  }
+  const mid = (lo + hi) >> 1;
+  const left = legacyDivide(a, lo, mid);
+  const right = legacyDivide(a, mid + 1, hi);
+  const size = hi - lo + 1;
+  const countIn = (value) => {
+    const indices = [];
+    for (let i = lo; i <= hi; i++) if (a[i] === value) indices.push(i);
+    return indices;
+  };
+  if (left.value === right.value && left.value !== null) {
+    const indices = countIn(left.value);
+    if (2 * indices.length > size) return { value: left.value, indices };
+    return { value: null, indices: [] };
+  }
+  for (const cand of [left.value, right.value]) {
+    if (cand === null) continue;
+    const indices = countIn(cand);
+    if (2 * indices.length > size) return { value: cand, indices };
+  }
+  return { value: null, indices: [] };
+}
+
+/* The repaired divide & conquer: a private sentinel (not null!), a candidate
+   search that touches no indices, and one verification pass at the top. */
+function divideAndConquer(a, withTree) {
+  const NOTHING = Symbol("no majority in this range");
+  const tree = withTree ? [] : null;
+  const candidateOf = (lo, hi, depth) => {
+    const label = "[" + lo + ".." + hi + "]";
+    if (lo === hi) {
+      if (tree) tree.push({ depth, range: label, note: "single element -> " + fmt(a[lo]) });
+      return a[lo];
+    }
+    const mid = (lo + hi) >> 1;
+    const left = candidateOf(lo, mid, depth + 1);
+    const right = candidateOf(mid + 1, hi, depth + 1);
+    if (left !== NOTHING && left === right) {
+      if (tree) tree.push({ depth, range: label, note: "halves agree on " + fmt(left) + " -> no count needed" });
+      return left;
+    }
+    const size = hi - lo + 1;
+    for (const cand of [left, right]) {
+      if (cand === NOTHING) continue;
+      const count = countIn(a, cand, lo, hi);
+      if (2 * count > size) {
+        if (tree) tree.push({ depth, range: label, note: "count " + fmt(cand) + " = " + count + " > " + size + "/2 -> keep" });
+        return cand;
+      }
+      if (tree) tree.push({ depth, range: label, note: "count " + fmt(cand) + " = " + count + " <= " + size + "/2 -> reject" });
+    }
+    if (tree) tree.push({ depth, range: label, note: "no majority" });
+    return NOTHING;
+  };
+  if (a.length === 0) return { dominator: null, tree };
+  const cand = candidateOf(0, a.length - 1, 0);
+  if (cand === NOTHING) return { dominator: null, tree };
+  const indices = [];
+  for (let i = 0; i < a.length; i++) if (a[i] === cand) indices.push(i);
+  const dominator = 2 * indices.length > a.length ? { value: cand, indices } : null;
+  return { dominator, tree };
+}
+
+function countIn(a, value, lo, hi) {
+  let n = 0;
+  for (let i = lo; i <= hi; i++) if (a[i] === value) n++;
+  return n;
+}
+
+/* The one-pass hash-map strategy: group indices by value, then check sizes.
+   O(n) time, O(n) memory, and every element read exactly once. */
+function indexCache(a) {
+  const groups = new Map();
+  a.forEach((value, i) => {
+    const key = value === null ? "null" : typeof value + ":" + String(value);
+    if (!groups.has(key)) groups.set(key, { value, indices: [] });
+    groups.get(key).indices.push(i);
+  });
+  for (const group of groups.values()) {
+    if (2 * group.indices.length > a.length) return { value: group.value, indices: group.indices };
+  }
+  return null;
+}
+
+/* the archived vote: -1 instead of null (bug B8) */
+function legacyVote(a) {
+  const { candidate } = voteWalk(a);
+  if (candidate === NOBODY) return -1;
+  let count = 0;
+  for (const x of a) if (x === candidate) count++;
+  return 2 * count > a.length ? a.map((x, i) => (x === candidate ? i : -1)).filter((i) => i >= 0) : -1;
+}
+
+/* =====================================================================
+   3. formatting helpers
+   ===================================================================== */
+
+function fmt(value) {
+  if (value === null) return "null";
+  if (value === undefined) return "undefined";
+  if (typeof value === "string") return JSON.stringify(value);
+  return String(value);
+}
+
+function fmtResult(r) {
+  return "(" + r.length + ", [" + r.answers.map(fmt).join(", ") + "])";
+}
+
+function fmtDominator(d) {
+  if (!d) return "null  (no dominator)";
+  return "Dominator(value=" + fmt(d.value) + ", indices=(" + d.indices.join(", ") + "))";
+}
+
+function sameResult(a, b) {
+  return a.length === b.length && a.answers.join("|") === b.answers.join("|");
+}
+
+/* =====================================================================
+   4. tabs
+   ===================================================================== */
+
+$("tabs").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-tab]");
+  if (!button) return;
+  for (const b of document.querySelectorAll("#tabs button")) b.classList.toggle("active", b === button);
+  for (const section of document.querySelectorAll("main > section")) {
+    section.hidden = section.id !== "tab-" + button.dataset.tab;
+  }
+});
+
+/* =====================================================================
+   5. balanced tab
+   ===================================================================== */
+
+let scanState = { steps: [], at: -1, text: "", timer: null };
+
+function readBalancedInput() {
+  const raw = $("bal-input").value;
+  const { text, error } = normalize(raw);
+  $("bal-error").textContent = error ? "✗ " + error : "";
+  return error ? null : text;
+}
+
+function renderScan() {
+  const { steps, at, text } = scanState;
+  const str = $("scan-str");
+  str.textContent = "";
+  const step = at >= 0 && at < steps.length ? steps[at] : null;
+  const windowStart = step ? step.start : (steps[0] ? steps[0].start : 0);
+  let scanEnd = step ? step.end : -1;
+
+  for (let i = 0; i < text.length; i++) {
+    const span = el("span", "ch", text[i]);
+    if (step) {
+      if (i >= step.start && i <= step.end) span.classList.add(step.hit ? "hit" : "win");
+      if (i === step.end) span.classList.add("edge");
+      if (i > step.end && i <= text.length && step.verdict.startsWith("a third")) span.classList.add("dead");
+    }
+    str.appendChild(span);
+  }
+
+  $("scan-counter").textContent = text.length
+    ? "window " + (at + 1) + " of " + steps.length + "   (start " + windowStart + ")"
+    : "";
+  $("scan-start").textContent = step ? step.start : "–";
+  $("scan-end").textContent = step ? step.end : "–";
+  $("scan-distinct").textContent = step ? step.distinct : "–";
+  $("scan-max").textContent = step ? step.maxCount : "–";
+  $("scan-test").textContent = step
+    ? (2 * step.maxCount === step.end - step.start + 1 ? "true" : "false")
+    : "–";
+  $("scan-best").textContent = step ? step.best : "–";
+
+  const freqBox = $("scan-freq");
+  freqBox.textContent = "";
+  for (let i = 0; i < 26; i++) {
+    const value = step ? step.freq[i] : 0;
+    const cell = el("div", "cell", String.fromCharCode(A_CODE + i) + " " + (value || "·"));
+    if (value) cell.classList.add("on");
+    if (step && step.end >= 0 && text.charCodeAt(step.end) - A_CODE === i && value) cell.classList.add("lit");
+    freqBox.appendChild(cell);
+  }
+
+  const verdict = $("scan-verdict");
+  verdict.className = "verdict " + (!step ? "" : step.hit ? "ok" : step.verdict.startsWith("a third") ? "warn" : "");
+  verdict.textContent = step ? step.verdict : "press Step or Play";
+
+  // keep the highlighted window in view for long inputs
+  const edge = str.querySelector(".edge");
+  if (edge && edge.scrollIntoView) edge.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
+function runBalanced() {
+  const text = readBalancedInput();
+  if (text === null) {
+    $("buggy-result").textContent = $("fixed-result").textContent = "—";
+    return;
+  }
+  const truth = fixedScan(text, true);
+  const buggy = buggyScan(text);
+  const fast = pairScan(text, true);
+
+  scanState = { steps: truth.steps, at: truth.steps.length ? 0 : -1, text, timer: scanState.timer };
+  renderScan();
+
+  $("buggy-result").textContent = fmtResult(buggy);
+  $("fixed-result").textContent = fmtResult(truth);
+  $("pair-result").textContent = "pair scan: " + fmtResult(fast) + "   (agrees: " + sameResult(fast, truth) + ")";
+
+  const verdict = $("buggy-verdict");
+  const ok = sameResult(buggy, truth);
+  verdict.innerHTML = ok
+    ? '<span class="badge ok">agrees here</span> <span class="small dim">this input happens to survive the misplacement</span>'
+    : '<span class="badge no">wrong</span> <span class="small dim">silently: no error, no warning, just a different answer</span>';
+  $("fixed-verdict").innerHTML =
+    '<span class="badge ok">the truth</span> <span class="small dim">every window examined, ' +
+    truth.steps.length + " windows for " + text.length + " characters</span>";
+
+  renderPairTable(fast.report);
+}
+
+function renderPairTable(report) {
+  const box = $("pair-table");
+  box.textContent = "";
+  const table = el("table");
+  const head = el("thead");
+  const hr = el("tr");
+  for (const [label, cls] of [["pair", ""], ["blocks", "num"], ["block sizes", ""], ["best", "num"], ["substrings", ""]]) {
+    hr.appendChild(el("th", cls, label));
+  }
+  head.appendChild(hr);
+  table.appendChild(head);
+  const body = el("tbody");
+  for (const row of report) {
+    const tr = el("tr");
+    tr.appendChild(el("td", "mono", row.pair));
+    tr.appendChild(el("td", "num mono", String(row.blocks)));
+    tr.appendChild(el("td", "mono", row.sizes || "—"));
+    tr.appendChild(el("td", "num mono", String(row.best)));
+    tr.appendChild(el("td", "mono", row.answers));
+    body.appendChild(tr);
+  }
+  table.appendChild(body);
+  box.appendChild(table);
+  const overall = report.reduce((m, r) => Math.max(m, r.best), 0);
+  $("pair-summary").textContent = report.length
+    ? "best over " + report.length + " letter pairs: " + overall
+    : "fewer than two distinct letters: nothing to compare";
+}
+
+function stopScanTimer() {
+  if (scanState.timer) { clearInterval(scanState.timer); scanState.timer = null; $("scan-play").textContent = "Play"; }
+}
+
+$("scan-play").addEventListener("click", () => {
+  if (scanState.timer) { stopScanTimer(); return; }
+  const speed = Number($("scan-speed").value);
+  $("scan-play").textContent = "Pause";
+  scanState.timer = setInterval(() => {
+    if (scanState.at >= scanState.steps.length - 1) { stopScanTimer(); return; }
+    scanState.at++;
+    renderScan();
+  }, speed);
+});
+$("scan-step").addEventListener("click", () => {
+  stopScanTimer();
+  if (scanState.at < scanState.steps.length - 1) scanState.at++;
+  renderScan();
+});
+$("scan-reset").addEventListener("click", () => {
+  stopScanTimer();
+  scanState.at = scanState.steps.length ? 0 : -1;
+  renderScan();
+});
+$("bal-run").addEventListener("click", () => { stopScanTimer(); runBalanced(); });
+$("bal-input").addEventListener("keydown", (e) => { if (e.key === "Enter") { stopScanTimer(); runBalanced(); } });
+$("bal-input").addEventListener("input", () => { stopScanTimer(); runBalanced(); });
+for (const chip of document.querySelectorAll("[data-sample]")) {
+  chip.addEventListener("click", () => { $("bal-input").value = chip.dataset.sample; stopScanTimer(); runBalanced(); });
+}
+
+/* =====================================================================
+   6. dominator tab
+   ===================================================================== */
+
+let voteState = { walk: [], at: -1, timer: null };
+
+function parseArray(text) {
+  const parts = text.split(/[,\s]+/).filter((p) => p.length);
+  const out = [];
+  for (const part of parts) {
+    const lower = part.toLowerCase();
+    if (lower === "null" || lower === "none" || lower === "nil") { out.push(null); continue; }
+    if (/^-?\d+$/.test(part)) { out.push(Number(part)); continue; }
+    if (/^".*"$/.test(part) || /^'.*'$/.test(part)) { out.push(part.slice(1, -1)); continue; }
+    return { array: null, error: "cannot read " + JSON.stringify(part) + " as a value" };
+  }
+  return { array: out, error: null };
+}
+
+function renderVote() {
+  const { walk, at } = voteState;
+  const step = at >= 0 && at < walk.length ? walk[at] : null;
+  $("vote-cand").textContent = step ? fmt(step.candidate) : "–";
+  $("vote-count").textContent = step ? String(step.count) : "0";
+
+  const box = $("vote-table");
+  box.textContent = "";
+  const table = el("table");
+  const head = el("thead");
+  const hr = el("tr");
+  for (const [label, cls] of [["i", "num"], ["value", ""], ["candidate before", ""], ["count", "num"], ["action", ""]]) {
+    hr.appendChild(el("th", cls, label));
+  }
+  head.appendChild(hr);
+  table.appendChild(head);
+  const body = el("tbody");
+  walk.forEach((row, index) => {
+    const tr = el("tr");
+    if (index === at) tr.classList.add("now");
+    else if (at >= 0 && index < at) tr.classList.add("done");
+    tr.appendChild(el("td", "num mono", String(row.i)));
+    tr.appendChild(el("td", "mono", fmt(row.value)));
+    tr.appendChild(el("td", "mono", fmt(row.candidate)));
+    tr.appendChild(el("td", "num mono", String(row.count)));
+    tr.appendChild(el("td", "mono", row.action));
+    body.appendChild(tr);
+  });
+  table.appendChild(body);
+  box.appendChild(table);
+}
+
+function renderDominator() {
+  const { array, error } = parseArray($("dom-input").value);
+  $("dom-error").textContent = error ? "✗ " + error : "";
+  if (error) { $("dom-table").textContent = ""; $("dc-tree").textContent = ""; return; }
+
+  const vote = boyerMoore(array);
+  const legacy = legacyVote(array);
+  const dac = divideAndConquer(array, true);
+  const legacyDac = array.length ? legacyDivide(array, 0, array.length - 1) : { value: null, indices: [] };
+  const cache = indexCache(array);
+
+  voteState = { walk: vote.walk, at: vote.walk.length ? 0 : -1, timer: voteState.timer };
+  renderVote();
+
+  const table = $("dom-table");
+  table.textContent = "";
+  const rows = [
+    ["boyer_moore (vote + verify)", fmtDominator(vote.dominator)],
+    ["divide_and_conquer (candidate + verify)", fmtDominator(dac.dominator)],
+    ["index_cache (one pass, hash map)", fmtDominator(cache)],
+    ["archived dominator (vote)", legacy === -1 ? "-1  (no dominator)" : "[" + legacy.join(", ") + "]"],
+    ["archived find_dominator_indices", legacyDac.indices.length ? "[" + legacyDac.indices.join(", ") + "]" : "[]  (no dominator)"],
+  ];
+  const body = el("tbody");
+  for (const [what, answer] of rows) {
+    const tr = el("tr");
+    tr.appendChild(el("td", "small", what));
+    tr.appendChild(el("td", "mono small", answer));
+    body.appendChild(tr);
+  }
+  table.appendChild(body);
+
+  const truth = referenceDominator(array);
+  const legacyGetsItRight = legacyDac.indices.length
+    ? truth !== null && legacyDac.value === truth.value
+    : truth === null;
+  const correct = legacyGetsItRight;
+  $("dom-verdict").innerHTML = correct
+    ? '<span class="badge ok">the archived recursion agrees on this array</span>'
+    : '<span class="badge no">the archived recursion is wrong on this array</span> ' +
+      '<span class="small dim">its <code>None</code> marker collides with a real value</span>';
+
+  const tree = $("dc-tree");
+  tree.textContent = "";
+  if (!dac.tree || !dac.tree.length) { tree.textContent = "empty array: nothing to halve"; return; }
+  const lines = [];
+  for (const node of dac.tree) {
+    lines.push("  ".repeat(node.depth) + (node.depth ? "└─ " : "") + node.range + "  " + node.note);
+  }
+  tree.textContent = lines.join("\n");
+}
+
+/* The slow, obvious dominator: for every position, count how many positions
+   hold an equal value. O(n^2), independent of every strategy above, so it can
+   serve as the truth in the self-check. */
+function referenceDominator(a) {
+  for (let i = 0; i < a.length; i++) {
+    const indices = [];
+    for (let j = 0; j < a.length; j++) if (a[j] === a[i]) indices.push(j);
+    if (2 * indices.length > a.length) return { value: a[i], indices };
+  }
+  return null;
+}
+
+function stopVoteTimer() {
+  if (voteState.timer) { clearInterval(voteState.timer); voteState.timer = null; $("vote-play").textContent = "Play"; }
+}
+
+$("vote-play").addEventListener("click", () => {
+  if (voteState.timer) { stopVoteTimer(); return; }
+  $("vote-play").textContent = "Pause";
+  voteState.timer = setInterval(() => {
+    if (voteState.at >= voteState.walk.length - 1) { stopVoteTimer(); return; }
+    voteState.at++;
+    renderVote();
+  }, 500);
+});
+$("vote-step").addEventListener("click", () => {
+  stopVoteTimer();
+  if (voteState.at < voteState.walk.length - 1) voteState.at++;
+  renderVote();
+});
+$("vote-reset").addEventListener("click", () => {
+  stopVoteTimer();
+  voteState.at = voteState.walk.length ? 0 : -1;
+  renderVote();
+});
+$("dom-run").addEventListener("click", () => { stopVoteTimer(); renderDominator(); });
+$("dom-input").addEventListener("keydown", (e) => { if (e.key === "Enter") { stopVoteTimer(); renderDominator(); } });
+$("dom-input").addEventListener("input", () => { stopVoteTimer(); renderDominator(); });
+for (const chip of document.querySelectorAll("[data-array]")) {
+  chip.addEventListener("click", () => { $("dom-input").value = chip.dataset.array; stopVoteTimer(); renderDominator(); });
+}
+
+/* =====================================================================
+   7. recursion tab
+   ===================================================================== */
+
+function recursiveDepth(s) {
+  // mirrors algorithms/balanced/recursion.py::recursive_depth
+  let deepest = 0;
+  const measure = (start, end, freq, distinct, depth) => {
+    if (depth > deepest) deepest = depth;
+    if (end === s.length) return;
+    const index = s.charCodeAt(end) - A_CODE;
+    if (freq[index] === 0) distinct++;
+    freq[index]++;
+    if (distinct > 2) return;
+    measure(start, end + 1, freq.slice(), distinct, depth + 1);
+  };
+  for (let start = 0; start < s.length; start++) measure(start, start, new Array(26).fill(0), 0, 1);
+  return deepest;
+}
+
+function callTree(s, maxNodes) {
+  const lines = [];
+  let count = 0;
+  const walk = (start, end, freq, distinct, depth, prefix, last) => {
+    if (count >= maxNodes) return;
+    count++;
+    lines.push(prefix + (last ? "└─ " : "├─ ") + "TryEnd(start=" + start + ", end=" + end + ")" +
+      (distinct ? "  distinct=" + distinct : ""));
+    if (end === s.length) return;
+    const index = s.charCodeAt(end) - A_CODE;
+    const next = freq.slice();
+    if (next[index] === 0) distinct++;
+    next[index]++;
+    if (distinct > 2) return;
+    walk(start, end + 1, next, distinct, depth + 1, prefix + (last ? "   " : "│  "), true);
+  };
+  for (let start = 0; start < s.length && count < maxNodes; start++) walk(start, start, new Array(26).fill(0), 0, 0, "", start === s.length - 1);
+  if (count >= maxNodes) lines.push("… truncated at " + maxNodes + " calls");
+  return lines.join("\n");
+}
+
+function runRecursion() {
+  const { text, error } = normalize($("rec-input").value);
+  if (error) {
+    $("rec-note").textContent = "✗ " + error;
+    $("rec-tree").textContent = "";
+    return;
+  }
+  const depth = recursiveDepth(text);
+  const budget = 1000;
+  $("rec-n").textContent = String(text.length);
+  $("rec-depth").textContent = String(depth);
+  const percent = Math.min(100, (depth / budget) * 100);
+  const bar = $("rec-bar");
+  bar.classList.toggle("over", depth >= budget);
+  bar.firstElementChild.style.width = percent + "%";
+  $("rec-verdict").textContent = depth >= budget - 4 ? "RecursionError" : "fits";
+  $("rec-note").textContent =
+    "Deepest call: " + depth + " frames for " + text.length + " characters. The depth counts the " +
+    "longest *window* the scan walks, not the length of the string, plus a terminating call: " +
+    "\"ab\" repeated never shows a third letter, so every scan runs to the end (depth = length + 1), " +
+    "while \"abcabc\" dies at the third letter and stops at depth 3.";
+  $("rec-tree").textContent = callTree(text.slice(0, 8), 40) || "(empty)";
+}
+
+$("rec-run").addEventListener("click", runRecursion);
+$("rec-input").addEventListener("input", runRecursion);
+for (const chip of document.querySelectorAll("[data-rec]")) {
+  chip.addEventListener("click", () => { $("rec-input").value = chip.dataset.rec; runRecursion(); });
+}
+
+/* =====================================================================
+   8. self-check: the same differential testing the repository runs
+   ===================================================================== */
+
+function* stringsUpTo(alphabet, maxLength) {
+  yield "";
+  for (let length = 1; length <= maxLength; length++) {
+    const total = Math.pow(alphabet.length, length);
+    for (let n = 0; n < total; n++) {
+      let rest = n, out = "";
+      for (let k = 0; k < length; k++) {
+        out = alphabet[rest % alphabet.length] + out;
+        rest = Math.floor(rest / alphabet.length);
+      }
+      yield out;
+    }
+  }
+}
+
+$("selftest").addEventListener("click", () => {
+  const lines = [];
+  const started = performance.now();
+  let checked = 0, mismatches = 0, buggyWrong = 0, buggyTotal = 0;
+  for (const s of stringsUpTo("abc", 7)) {
+    const oracle = reference(s);
+    const fixed = fixedScan(s, false);
+    const fast = pairScan(s, false);
+    checked++;
+    if (!sameResult(oracle, fixed) || !sameResult(oracle, fast)) {
+      mismatches++;
+      if (mismatches <= 5) lines.push("  MISMATCH on " + JSON.stringify(s) + ": " +
+        fmtResult(oracle) + " vs fixed " + fmtResult(fixed) + " vs pair " + fmtResult(fast));
+    }
+    buggyTotal++;
+    if (!sameResult(buggyScan(s), oracle)) buggyWrong++;
+  }
+  lines.unshift(
+    "checked " + checked + " strings over {a,b,c} up to length 7 in " +
+    (performance.now() - started).toFixed(0) + " ms",
+    "  reference == fixed == pair_scan .......... " + (mismatches === 0 ? "yes (0 mismatches)" : mismatches + " MISMATCHES"),
+    "  archived loop disagrees with the truth .. " + buggyWrong + " / " + buggyTotal +
+    "  (" + ((100 * buggyWrong) / buggyTotal).toFixed(1) + "% of these inputs)"
+  );
+  $("selftest-out").textContent = lines.join("\n");
+});
+
+/* =====================================================================
+   9. go
+   ===================================================================== */
+
+runBalanced();
+scanState.at = scanState.steps.length ? 0 : -1;
+renderScan();
+renderDominator();
+runRecursion();
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+# the divide & conquer dominator as a call tree
+#
+# Regenerate with:  python -m tools.make_traces
+# Do not edit by hand: tests/test_docs_traces.py compares this file with a
+# fresh run of the code it shows.
+
+## divide_and_conquer([3, 1, 3, 2, 3, 4, 3, 3])
+
+Each node shows its range and the answer it returned; '-' means 'this range
+has no dominator'.  Follow the right half: 3 dominates [4..7] because it is
+the candidate of both its halves.
+
+`-- majority(lo=0, hi=7)  -> 3
+    |-- majority(lo=0, hi=3)  -> '-'
+    |   |-- majority(lo=0, hi=1)  -> '-'
+    |   |   |-- majority(lo=0, hi=0)  -> 3
+    |   |   `-- majority(lo=1, hi=1)  -> 1
+    |   `-- majority(lo=2, hi=3)  -> '-'
+    |       |-- majority(lo=2, hi=2)  -> 3
+    |       `-- majority(lo=3, hi=3)  -> 2
+    `-- majority(lo=4, hi=7)  -> 3
+        |-- majority(lo=4, hi=5)  -> '-'
+        |   |-- majority(lo=4, hi=4)  -> 3
+        |   `-- majority(lo=5, hi=5)  -> 4
+        `-- majority(lo=6, hi=7)  -> 3
+            |-- majority(lo=6, hi=6)  -> 3
+            `-- majority(lo=7, hi=7)  -> 3
+
+## the same recursion on [3, 1, 3, 2] -- where it returns nothing
+
+No half has a dominator, so no range above them can have one either.  That
+is the halving lemma doing the work: it is what makes 'nothing' a safe
+answer to propagate upwards.
+
+`-- majority(lo=0, hi=3)  -> '-'
+    |-- majority(lo=0, hi=1)  -> '-'
+    |   |-- majority(lo=0, hi=0)  -> 3
+    |   `-- majority(lo=1, hi=1)  -> 1
+    `-- majority(lo=2, hi=3)  -> '-'
+        |-- majority(lo=2, hi=2)  -> 3
+        `-- majority(lo=3, hi=3)  -> 2

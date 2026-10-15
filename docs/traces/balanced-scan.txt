@@ -1,0 +1,54 @@
+# element-by-element trace of the repaired quadratic scan
+#
+# Regenerate with:  python -m tools.make_traces
+# Do not edit by hand: tests/test_docs_traces.py compares this file with a
+# fresh run of the code it shows.
+
+## brute_force('aabbb') -- the fixed scan
+
+Every window the scan looks at, with the frequency table at that moment.
+The 'balanced <--' rows are the windows that count.
+
++-------+-----+-------------+---------+----------+-------------------+------+
+| start | end | window seen | counts  | distinct | verdict           | best |
++-------+-----+-------------+---------+----------+-------------------+------+
+|     0 |   0 | a           | a:1     |        1 | needs two letters |    0 |
+|     0 |   1 | aa          | a:2     |        1 | needs two letters |    0 |
+|     0 |   2 | aab         | a:2 b:1 |        2 | counts differ     |    0 |
+|     0 |   3 | aabb        | a:2 b:2 |        2 | balanced <--      |    4 |
+|     0 |   4 | aabbb       | a:2 b:3 |        2 | counts differ     |    4 |
+|     1 |   1 | a           | a:1     |        1 | needs two letters |    4 |
+|     1 |   2 | ab          | a:1 b:1 |        2 | balanced <--      |    4 |
+|     1 |   3 | abb         | a:1 b:2 |        2 | counts differ     |    4 |
+|     1 |   4 | abbb        | a:1 b:3 |        2 | counts differ     |    4 |
+|     2 |   2 | b           | b:1     |        1 | needs two letters |    4 |
+|     2 |   3 | bb          | b:2     |        1 | needs two letters |    4 |
+|     2 |   4 | bbb         | b:3     |        1 | needs two letters |    4 |
+|     3 |   3 | b           | b:1     |        1 | needs two letters |    4 |
+|     3 |   4 | bb          | b:2     |        1 | needs two letters |    4 |
+|     4 |   4 | b           | b:1     |        1 | needs two letters |    4 |
++-------+-----+-------------+---------+----------+-------------------+------+
+
+## brute_force('aabbc')
+
+Same scan, with a third letter appearing at the end of the first start.
+
++-------+-----+-------------+-------------+----------+--------------------+------+
+| start | end | window seen | counts      | distinct | verdict            | best |
++-------+-----+-------------+-------------+----------+--------------------+------+
+|     0 |   0 | a           | a:1         |        1 | needs two letters  |    0 |
+|     0 |   1 | aa          | a:2         |        1 | needs two letters  |    0 |
+|     0 |   2 | aab         | a:2 b:1     |        2 | counts differ      |    0 |
+|     0 |   3 | aabb        | a:2 b:2     |        2 | balanced <--       |    4 |
+|     0 |   4 | aabbc       | a:2 b:2 c:1 |        3 | 3rd letter -> stop |    4 |
+|     1 |   1 | a           | a:1         |        1 | needs two letters  |    4 |
+|     1 |   2 | ab          | a:1 b:1     |        2 | balanced <--       |    4 |
+|     1 |   3 | abb         | a:1 b:2     |        2 | counts differ      |    4 |
+|     1 |   4 | abbc        | a:1 b:2 c:1 |        3 | 3rd letter -> stop |    4 |
+|     2 |   2 | b           | b:1         |        1 | needs two letters  |    4 |
+|     2 |   3 | bb          | b:2         |        1 | needs two letters  |    4 |
+|     2 |   4 | bbc         | b:2 c:1     |        2 | counts differ      |    4 |
+|     3 |   3 | b           | b:1         |        1 | needs two letters  |    4 |
+|     3 |   4 | bc          | b:1 c:1     |        2 | balanced <--       |    4 |
+|     4 |   4 | c           | c:1         |        1 | needs two letters  |    4 |
++-------+-----+-------------+-------------+----------+--------------------+------+

@@ -1,0 +1,54 @@
+# element reads on 'ababab...' (the quadratic scans' worst case)
+#
+# Regenerate with:  python -m tools.make_traces
+# Do not edit by hand: tests/test_docs_traces.py compares this file with a
+# fresh run of the code it shows.
+
+positions = single-element reads: the search itself.
+slices    = characters copied while materialising answers.
+Each growth column compares with the previous doubling of n.
+
+Doubling n multiplies *positions* by about 4 for the quadratic scans and by
+about 2 for the pair scan -- the complexity classes, measured rather than
+asserted.  The reference shows 0 positions because it works by slicing: it
+copies every window it looks at, so all of its work lands in the slices
+column, where the growth is about 8 (its cost is n^3).
+
+The pair scan is the interesting row: its search is linear, yet its slices
+grow fourfold, because every candidate that improves the record is copied,
+and the records get longer as it goes.  pair_scan_two_pass walks the pairs
+twice -- once to learn the best length, once to collect the answers of that
+length -- and pays 1.5x the positions to cut the slices from n^2/2 to n.
+
+Wall-clock time (bench.txt) shows which bill actually hurts: copying
+characters is a memcpy in C, while the quadratic scans spend their time in
+the Python interpreter.  Quadratic search work is not the same problem as
+quadratic copying work, and a good measurement keeps them apart.
+
++-----------------------------+-----+-----------+------------+---------+--------------+
+| implementation              |   n | positions | pos growth |  slices | slice growth |
++-----------------------------+-----+-----------+------------+---------+--------------+
+| reference (n^3)             |  25 |         0 |          - |   2,925 |            - |
+| reference (n^3)             |  50 |         0 |          - |  22,100 |         x7.6 |
+| reference (n^3)             | 100 |         0 |          - | 171,700 |         x7.8 |
+|                             |     |           |            |         |              |
+| brute_force (n^2)           | 100 |     5,050 |          - |   2,550 |            - |
+| brute_force (n^2)           | 200 |    20,100 |       x4.0 |  10,100 |         x4.0 |
+| brute_force (n^2)           | 400 |    80,200 |       x4.0 |  40,200 |         x4.0 |
+| brute_force (n^2)           | 800 |   320,400 |       x4.0 | 160,400 |         x4.0 |
+|                             |     |           |            |         |              |
+| recursive_shared_freq (n^2) | 100 |     5,050 |          - |   2,550 |            - |
+| recursive_shared_freq (n^2) | 200 |    20,100 |       x4.0 |  10,100 |         x4.0 |
+| recursive_shared_freq (n^2) | 400 |    80,200 |       x4.0 |  40,200 |         x4.0 |
+|                             |     |           |            |         |              |
+| pair_scan                   | 100 |       200 |          - |   5,000 |            - |
+| pair_scan                   | 200 |       400 |       x2.0 |  20,000 |         x4.0 |
+| pair_scan                   | 400 |       800 |       x2.0 |  80,000 |         x4.0 |
+| pair_scan                   | 800 |     1,600 |       x2.0 | 320,000 |         x4.0 |
+|                             |     |           |            |         |              |
+| pair_scan_two_pass          | 100 |       300 |          - |     100 |            - |
+| pair_scan_two_pass          | 200 |       600 |       x2.0 |     200 |         x2.0 |
+| pair_scan_two_pass          | 400 |     1,200 |       x2.0 |     400 |         x2.0 |
+| pair_scan_two_pass          | 800 |     2,400 |       x2.0 |     800 |         x2.0 |
+|                             |     |           |            |         |              |
++-----------------------------+-----+-----------+------------+---------+--------------+
